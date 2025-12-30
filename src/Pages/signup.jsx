@@ -28,32 +28,37 @@ import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/sonner';
 import { api } from '@/lib/axios';
 
-const signupSchema = z.object({
-  firstName: z.string().trim().min(1, {
-    message: 'O nome é obrigatório',
-  }),
-  lastName: z.string().trim().min(1, {
-    message: 'O sobrenome é obrigatório',
-  }),
-  email: z
-    .string()
-    .email({
-      message: 'O email é inválido',
-    })
-    .trim()
-    .min(1, {
-      message: 'O email é obrigatório',
+const signupSchema = z
+  .object({
+    firstName: z.string().trim().min(1, {
+      message: 'O nome é obrigatório',
     }),
-  password: z.string().min(6, {
-    message: 'A senha deve ter no mínimo 6 caracteres',
-  }),
-  passwordConfirmation: z.string().min(6, {
-    message: 'A confirmação de senha é obrigatória',
-  }),
-  terms: z.boolean().refine((val) => val === true, {
-    message: 'Você deve aceitar os termos de uso',
-  }),
-});
+    lastName: z.string().trim().min(1, {
+      message: 'O sobrenome é obrigatório',
+    }),
+    email: z
+      .string()
+      .email({
+        message: 'O email é inválido',
+      })
+      .trim()
+      .min(1, {
+        message: 'O email é obrigatório',
+      }),
+    password: z.string().min(6, {
+      message: 'A senha deve ter no mínimo 6 caracteres',
+    }),
+    passwordConfirmation: z.string().min(6, {
+      message: 'A confirmação de senha é obrigatória',
+    }),
+    terms: z.boolean().refine((val) => val === true, {
+      message: 'Você deve aceitar os termos de uso',
+    }),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: 'As senhas não coincidem',
+    path: ['passwordConfirmation'],
+  });
 
 const SignupPage = () => {
   const [user, setUser] = useState(null);
