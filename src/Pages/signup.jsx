@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router';
 import { z } from 'zod';
@@ -25,8 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Toaster } from '@/components/ui/sonner';
-import { api } from '@/lib/axios';
+import { AuthContext } from '@/contexts/auth';
 
 const signupSchema = z
   .object({
@@ -61,23 +59,9 @@ const signupSchema = z
   });
 
 const SignupPage = () => {
-  const [user, setUser] = useState(null);
+  const { user, signup } = useContext(AuthContext);
 
-  const signupMutation = useMutation({
-    mutationKey: ['signup'],
-    mutationFn: async (variables) => {
-      const response = await api.post('/users', {
-        first_name: variables.firstName,
-        last_name: variables.lastName,
-        email: variables.email,
-        password: variables.password,
-      });
-
-      return response.data;
-    },
-  });
-
-  const methods = useForm({
+  const form = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       firstName: '',
@@ -89,44 +73,7 @@ const SignupPage = () => {
     },
   });
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const accessToken = localStorage.getItem('accessToken');
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (accessToken && refreshToken) return;
-        const response = await api.get('/users/me', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        setUser(response.data);
-      } catch (error) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        console.error(error);
-      }
-    };
-    init();
-  }, []);
-
-  const handleSubmit = (data) => {
-    signupMutation.mutate(data, {
-      onSuccess: (createUser) => {
-        const accessToken = createUser.Tokens.accessToken;
-        const refreshToken = createUser.Tokens.refreshToken;
-
-        setUser(createUser);
-
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        Toaster.success('Conta criada com sucesso!');
-      },
-      onError: () => {
-        Toaster.error('Erro ao criar conta. Tente novamente.');
-      },
-    });
-  };
+  const handleSubmit = (data) => signup(data);
 
   if (user) {
     return <h1>Olá, {user.first_name}</h1>;
@@ -134,8 +81,8 @@ const SignupPage = () => {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-3">
-      <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(handleSubmit)}>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
           <Card className="w-[500px]">
             <CardHeader>
               <CardTitle>Crie sua conta</CardTitle>
@@ -144,7 +91,7 @@ const SignupPage = () => {
             <CardContent className="space-y-4">
               {/* PRIMEIRO NOME */}
               <FormField
-                control={methods.control}
+                control={form.control}
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
@@ -158,7 +105,7 @@ const SignupPage = () => {
               />
               {/* ÚLTIMO NOME */}
               <FormField
-                control={methods.control}
+                control={form.control}
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
@@ -173,7 +120,7 @@ const SignupPage = () => {
 
               {/* E-MAIL */}
               <FormField
-                control={methods.control}
+                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -188,7 +135,7 @@ const SignupPage = () => {
 
               {/* SENHA */}
               <FormField
-                control={methods.control}
+                control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
@@ -202,7 +149,7 @@ const SignupPage = () => {
               />
 
               <FormField
-                control={methods.control}
+                control={form.control}
                 name="passwordConfirmation"
                 render={({ field }) => (
                   <FormItem>
@@ -219,7 +166,7 @@ const SignupPage = () => {
               />
 
               <FormField
-                control={methods.control}
+                control={form.control}
                 name="terms"
                 render={({ field }) => (
                   <FormItem className="items-top flex space-x-2 space-y-0">
@@ -231,12 +178,12 @@ const SignupPage = () => {
                     </FormControl>
                     <div className="loading-none">
                       <label
-                        className={`text-xs text-muted-foreground opacity-75 ${methods.formState.errors.terms && 'text-red-500'}`}
+                        className={`text-xs text-muted-foreground opacity-75 ${form.formState.errors.terms && 'text-red-500'}`}
                       >
                         Ao clicar em Criar conta, voce aceita{' '}
                         <a
                           href="#"
-                          className={`text-white underline ${methods.formState.errors.terms && 'text-red-500'}`}
+                          className={`text-white underline ${form.formState.errors.terms && 'text-red-500'}`}
                         >
                           nosso termo de uso e política de privacidade
                         </a>
